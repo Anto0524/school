@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School Staff Details</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Arial, sans-serif;
+    background: #f3f6fb;
+    margin: 0;
+    padding: 25px 15px;
+    color: #172033;
+}
+
+.container {
+    max-width: 1000px;
+    margin: auto;
+}
+
+h1 {
+    text-align: center;
+    color: #214f9f;
+}
+
+h2 {
+    color: #214f9f;
+}
+
+.card {
+    background: white;
+    padding: 25px;
+    border-radius: 12px;
+    margin-top: 20px;
+    box-shadow: 0 3px 15px rgba(0,0,0,0.08);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+label {
+    font-weight: bold;
+}
+
+input, select, textarea {
+    padding: 11px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    width: 100%;
+}
+
+.full {
+    grid-column: 1 / -1;
+}
+
+button {
+    padding: 12px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 15px;
+    margin-top: 15px;
+}
+
+.primary {
+    background: #2457bd;
+    color: white;
+}
+
+.success {
+    background: #16794b;
+    color: white;
+}
+
+.secondary {
+    background: #ddd;
+    color: black;
+}
+
+.hidden {
+    display: none;
+}
+
+.teacher {
+    border: 1px solid #ddd;
+    padding: 18px;
+    margin-top: 15px;
+    border-radius: 10px;
+}
+
+.error {
+    color: red;
+    margin-top: 12px;
+}
+
+.summary {
+    background: #eef4ff;
+    padding: 12px;
+    margin-top: 15px;
+    border-radius: 6px;
+}
+
+@media(max-width: 600px) {
+    .grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>School Staff Details Management</h1>
+
+<!-- PAGE 1 -->
+
+<div class="card" id="page1">
+
+<h2>School Information</h2>
+
+<div class="grid">
+
+<div class="field full">
+<label>School Name</label>
+<input type="text" id="schoolName"
+placeholder="Enter School Name">
+</div>
+
+<div class="field">
+<label>Total Number of Staff</label>
+<input type="number" id="totalStaff" min="0">
+</div>
+
+<div class="field">
+<label>Number of HM</label>
+<input type="number" id="hm" value="1" min="0">
+</div>
+
+<div class="field">
+<label>Post Graduate Teachers</label>
+<input type="number" id="pg" value="0" min="0">
+</div>
+
+<div class="field">
+<label>BT Assistant Teachers</label>
+<input type="number" id="bt" value="0" min="0">
+</div>
+
+<div class="field">
+<label>SC Teachers</label>
+<input type="number" id="sc" value="0" min="0">
+</div>
+
+<div class="field">
+<label>Special Teachers</label>
+<input type="number" id="special" value="0" min="0">
+</div>
+
+<div class="field">
+<label>Office Staff</label>
+<input type="number" id="office" value="0" min="0">
+</div>
+
+</div>
+
+<div class="summary">
+Calculated Staff Total: <b id="calculatedStaff">1</b>
+<br><br>
+Teacher Records Required: <b id="teacherCount">1</b>
+</div>
+
+<p id="error1" class="error"></p>
+
+<button class="primary" onclick="goToPage2()">
+Continue
+</button>
+
+</div>
+
+
+<!-- PAGE 2 -->
+
+<div class="card hidden" id="page2">
+
+<h2>Teacher Details</h2>
+
+<p id="teacherMessage"></p>
+
+<div id="teacherForms"></div>
+
+<p id="error2" class="error"></p>
+
+<button class="secondary" onclick="goBack()">
+Back
+</button>
+
+<button class="success" onclick="generateExcel()">
+Generate Excel File
+</button>
+
+</div>
+
+</div>
+
+
+<!-- EXCEL LIBRARY -->
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+
+<script>
+
+// STAFF CATEGORY IDS
+
+const staffFields = [
+    "hm",
+    "pg",
+    "bt",
+    "sc",
+    "special",
+    "office"
+];
+
+const teacherFields = [
+    "hm",
+    "pg",
+    "bt",
+    "sc",
+    "special"
+];
+
+let totalTeachers = 0;
+
+
+// GET INPUT VALUE
+
+function getNumber(id) {
+
+    const value = document.getElementById(id).value;
+
+    if (value.trim() === "") {
+        return NaN;
+    }
+
+    const number = Number(value);
+
+    if (!Number.isInteger(number) || number < 0) {
+        return NaN;
+    }
+
+    return number;
+}
+
+
+// CALCULATE STAFF TOTAL
+
+function calculateStaff() {
+
+    let total = 0;
+
+    for (let id of staffFields) {
+
+        total += getNumber(id);
+
+    }
+
+    return total;
+}
+
+
+// CALCULATE TEACHER TOTAL
+
+function calculateTeachers() {
+
+    let total = 0;
+
+    for (let id of teacherFields) {
+
+        total += getNumber(id);
+
+    }
+
+    return total;
+}
+
+
+// UPDATE TOTALS AUTOMATICALLY
+
+function updateTotals() {
+
+    const valid = staffFields.every(
+        id => Number.isInteger(getNumber(id))
+    );
+
+    if (!valid) {
+        document.getElementById("calculatedStaff").innerText = "—";
+        document.getElementById("teacherCount").innerText = "—";
+        return;
+    }
+
+    document.getElementById("calculatedStaff").innerText =
+        calculateStaff();
+
+    document.getElementById("teacherCount").innerText =
+        calculateTeachers();
+
+}
+
+staffFields.forEach(id => {
+
+    document.getElementById(id).addEventListener(
+        "input",
+        updateTotals
+    );
+
+});
+
+
+// VALIDATE PAGE 1 AND MOVE TO PAGE 2
+
+function goToPage2() {
+
+    const schoolName =
+        document.getElementById("schoolName").value.trim();
+
+    const enteredTotal = getNumber("totalStaff");
+
+    const error = document.getElementById("error1");
+
+    error.innerText = "";
+
+    if (schoolName === "") {
+
+        error.innerText = "Please enter school name.";
+        return;
+
+    }
+
+    if (!Number.isInteger(enteredTotal)) {
+
+        error.innerText = "Enter a valid total staff count.";
+        return;
+
+    }
+
+    if (!staffFields.every(
+        id => Number.isInteger(getNumber(id))
+    )) {
+
+        error.innerText =
+            "All staff counts must be valid non-negative whole numbers.";
+
+        return;
+
+    }
+
+    const calculatedTotal = calculateStaff();
+
+    if (enteredTotal !== calculatedTotal) {
+
+        error.innerText =
+            "Staff total mismatch! Calculated total is "
+            + calculatedTotal;
+
+        return;
+
+    }
+
+    totalTeachers = calculateTeachers();
+
+    document.getElementById("teacherMessage").innerText =
+        "Please enter details for " + totalTeachers + " teachers.";
+
+    createTeacherForms(totalTeachers);
+
+    document.getElementById("page1").classList.add("hidden");
+
+    document.getElementById("page2").classList.remove("hidden");
+
+    window.scrollTo(0, 0);
+
+}
+
+
+// CREATE DYNAMIC TEACHER FORMS
+
+function createTeacherForms(count) {
+
+    const container =
+        document.getElementById("teacherForms");
+
+    container.innerHTML = "";
+
+    for (let i = 1; i <= count; i++) {
+
+        const div = document.createElement("div");
+
+        div.className = "teacher";
+
+        div.innerHTML = `
+
+            <h3>Teacher ${i}</h3>
+
+            <div class="grid">
+
+                <div class="field">
+                    <label>Name</label>
+                    <input type="text" id="name${i}">
+                </div>
+
+                <div class="field">
+                    <label>Date of Birth</label>
+                    <input type="date" id="dob${i}">
+                </div>
+
+                <div class="field">
+                    <label>Sex</label>
+
+                    <select id="sex${i}">
+                        <option value="">Select</option>
+                        <option>Male</option>
+                        <option>Female</option>
+                        <option>Other</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Designation</label>
+                    <input type="text" id="designation${i}">
+                </div>
+
+                <div class="field">
+                    <label>Qualification</label>
+                    <input type="text" id="qualification${i}">
+                </div>
+
+                <div class="field">
+                    <label>Phone Number</label>
+                    <input type="tel" id="phone${i}" maxlength="15">
+                </div>
+
+                <div class="field full">
+                    <label>Address</label>
+                    <textarea id="address${i}"></textarea>
+                </div>
+
+            </div>
+
+        `;
+
+        container.appendChild(div);
+
+    }
+
+}
+
+
+// GO BACK TO PAGE 1
+
+function goBack() {
+
+    document.getElementById("page2").classList.add("hidden");
+
+    document.getElementById("page1").classList.remove("hidden");
+
+    document.getElementById("error2").innerText = "";
+
+    window.scrollTo(0, 0);
+
+}
+
+
+// COLLECT TEACHER DETAILS
+
+function collectTeachers() {
+
+    const teachers = [];
+
+    for (let i = 1; i <= totalTeachers; i++) {
+
+        const teacher = {
+
+            "S.No": i,
+            "Name": document.getElementById("name" + i).value.trim(),
+            "Date of Birth": document.getElementById("dob" + i).value,
+            "Sex": document.getElementById("sex" + i).value,
+            "Designation": document.getElementById("designation" + i).value.trim(),
+            "Qualification": document.getElementById("qualification" + i).value.trim(),
+            "Phone Number": document.getElementById("phone" + i).value.trim(),
+            "Address": document.getElementById("address" + i).value.trim()
+
+        };
+
+        // Check empty fields
+        for (const key of Object.keys(teacher)) {
+
+            if (key === "S.No") continue;
+
+            if (!teacher[key]) {
+
+                throw new Error(
+                    "Please complete " + key + " for Teacher " + i
+                );
+
+            }
+
+        }
+
+        // Phone number validation
+        const phone = teacher["Phone Number"];
+
+        const digits = phone.replace(/\D/g, "");
+
+        if (digits.length < 10 || digits.length > 13) {
+
+            throw new Error(
+                "Enter a valid phone number for Teacher " + i
+            );
+
+        }
+
+        teachers.push(teacher);
+
+    }
+
+    return teachers;
+
+}
+
+// GENERATE EXCEL WORKBOOK
+
+function generateExcel() {
+
+    const error = document.getElementById("error2");
+
+    error.innerText = "";
+
+    try {
+
+        if (typeof XLSX === "undefined") {
+
+            throw new Error(
+                "Excel library not loaded. Check your internet connection."
+            );
+
+        }
+
+        // COLLECT TEACHER DATA
+
+        const teachers = collectTeachers();
+
+        // FIRST SHEET - SCHOOL DETAILS
+
+        const schoolData = [{
+
+            "School Name":
+                document.getElementById("schoolName").value.trim(),
+
+            "Total Number of Staff":
+                getNumber("totalStaff"),
+
+            "Number of HM":
+                getNumber("hm"),
+
+            "Post Graduate Teachers":
+                getNumber("pg"),
+
+            "BT Assistant Teachers":
+                getNumber("bt"),
+
+            "SC Teachers":
+                getNumber("sc"),
+
+            "Special Teachers":
+                getNumber("special"),
+
+            "Office Staff":
+                getNumber("office"),
+
+            "Total Teacher Records":
+                totalTeachers
+
+        }];
+
+
+        // CREATE EXCEL WORKBOOK
+
+        const workbook = XLSX.utils.book_new();
+
+
+        // CREATE FIRST WORKSHEET
+
+        const schoolSheet =
+            XLSX.utils.json_to_sheet(schoolData);
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            schoolSheet,
+            "School Summary"
+        );
+
+
+        // CREATE SECOND WORKSHEET
+
+        const teacherSheet =
+            XLSX.utils.json_to_sheet(
+                teachers.length ? teachers : [{
+                    "S.No": "",
+                    "Name": "",
+                    "Date of Birth": "",
+                    "Sex": "",
+                    "Designation": "",
+                    "Qualification": "",
+                    "Phone Number": "",
+                    "Address": ""
+                }]
+            );
+
+        XLSX.utils.book_append_sheet(
+            workbook,
+            teacherSheet,
+            "Teacher Details"
+        );
+
+
+        // DOWNLOAD EXCEL FILE
+
+        const schoolName =
+            document.getElementById("schoolName").value.trim();
+
+        const fileName =
+            schoolName.replace(/[^a-z0-9_-]/gi, "_")
+            + "_Staff_Details.xlsx";
+
+        XLSX.writeFile(workbook, fileName);
+
+    }
+
+    catch (e) {
+
+        error.innerText = e.message;
+
+    }
+
+}
+
+updateTotals();
+
+</script>
+
+</body>
+</html>
